@@ -36,7 +36,8 @@ main{position:relative;min-height:0;display:grid;grid-template-columns:minmax(20
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const ramp=[' .,:;irsXA',' .,:;irsXA253hMHGS#9B&@',' .,:;irsXA253hMHGS#9B&@'];
   const palettes={mono:[[116,125,116],[250,250,242]],ice:[[71,129,172],[226,247,255]],ember:[[155,84,49],[255,226,180]],mint:[[73,126,99],[218,255,210]]};
-  let colorCache={},palette='mono',cols=120,rows=140,dpr=1,ready=false,last=0,mode='idle',modeStart=0,modeEnd=0,blinkNext=1800,blinkStart=0;
+  let colorCache={},palette='mono',cols=120,rows=140,dpr=1,ready=false,last=0,mode='idle',modeStart=0,modeEnd=0,blinkNext=700,blinkStart=0;
+  let gazeX=0,gazeY=0,idleLookX=0,idleLookY=0,nextSaccade=300,pointerLookX=0,pointerLookY=0,pointerLookUntil=0;
   let drag={active:false,x:0,y:0,dx:0,dy:0,originX:0,originY:0,moved:false},ripples=[];
   const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
   const smooth=t=>{t=clamp(t);return t*t*(3-2*t)};
@@ -56,7 +57,7 @@ main{position:relative;min-height:0;display:grid;grid-template-columns:minmax(20
     if(mode==='wave'&&side===1){elbowX=.43;elbowY=-.01+Math.sin(t*7)*.025;wristX=.47;wristY=-.28+Math.sin(t*7)*.05}
     if(mode==='run'){elbowX=side*.34+Math.sin(phase)*.07;elbowY=.26+Math.cos(phase)*.045;wristX=side*.25+Math.sin(phase+1)*.085;wristY=.31+Math.cos(phase+1)*.06}
     if(mode==='click'){const target=ripples[ripples.length-1];if(target&&side===(target.x<0?-1:1)){const p=smooth((performance.now()-target.t)/220);wristX=side*.25+(target.x-side*.25)*p;wristY=.36+(target.y-.36)*p;elbowX=side*.38+(wristX-side*.38)*.48;elbowY=.29+(wristY-.29)*.4}}
-    if(mode==='idle'){elbowY+=Math.sin(t*2.7+side)*.013;wristX+=Math.sin(t*2.2+side)*.011;wristY+=Math.sin(t*3.1+side)*.014}
+    if(mode==='idle'){elbowY+=Math.sin(t*4.8+side)*.025;wristX+=Math.sin(t*4.1+side)*.018;wristY+=Math.sin(t*5.2+side)*.022}
     return{shoulderX,shoulderY,elbowX,elbowY,wristX,wristY};
   }
   function legPose(side,t){
@@ -68,12 +69,25 @@ main{position:relative;min-height:0;display:grid;grid-template-columns:minmax(20
     if(!ready)return;if(mode!=='idle'&&now>modeEnd)setMode('idle');
     const w=canvas.width,h=canvas.height,cell=w/cols,line=h/rows,chars=ramp[+density.value-1],t=now*.001;
     ctx.clearRect(0,0,w,h);ctx.font=`${Math.max(5.2,cell*.84)}px "Cascadia Code",monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
-    if(now>blinkNext&&!blinkStart)blinkStart=now;let blink=0;if(blinkStart){const p=(now-blinkStart)/190;if(p<1)blink=Math.sin(p*Math.PI);else{blinkStart=0;blinkNext=now+2500+Math.random()*3000}}
+    if(now>blinkNext&&!blinkStart)blinkStart=now;let blink=0;if(blinkStart){const p=(now-blinkStart)/145;if(p<1)blink=Math.sin(p*Math.PI);else{blinkStart=0;blinkNext=now+(Math.random()<.2?150:720+Math.random()*1250)}}
+    if(now>nextSaccade){idleLookX=(Math.random()-.5)*.07;idleLookY=(Math.random()-.5)*.045;nextSaccade=now+320+Math.random()*980}
+    let lookX=idleLookX,lookY=idleLookY;
+    if(mode==='typing'){lookX=Math.sin(t*15)*.047;lookY=Math.sin(t*8.5)*.018}
+    else if(mode==='thinking'){lookX=.025+Math.sin(t*2.2)*.015;lookY=-.055}
+    else if(mode==='click'&&ripples.length){lookX=clamp(ripples[ripples.length-1].x*.18,-.06,.06);lookY=clamp((ripples[ripples.length-1].y+.43)*.12,-.05,.07)}
+    else if(mode==='wave'){lookX=Math.sin(t*2)*.018;lookY=-.005}
+    else if(mode==='run'){lookX=Math.sin((now-modeStart)*.00105)*.045;lookY=.018}
+    else if(now<pointerLookUntil){lookX=pointerLookX;lookY=pointerLookY}
+    gazeX+=(lookX-gazeX)*.28;gazeY+=(lookY-gazeY)*.28;
+    const faceWobbleX=Math.sin(t*4.3)*.009+(mode==='run'?Math.sin(t*10)*.018:0),faceWobbleY=Math.sin(t*5.1)*.006+(mode==='typing'?Math.sin(t*13)*.008:0);
+    const mouthOpen=mode==='click'?.035:mode==='typing'?.006+Math.max(0,Math.sin(t*18))*.044:mode==='run'?.014+Math.abs(Math.sin(t*10))*.019:mode==='wave'?.016:mode==='thinking'?.003:.006+Math.max(0,Math.sin(t*3.2))*.008;
+    const browLift=mode==='thinking'?.025:mode==='click'?.022:mode==='run'?.009:Math.sin(t*3.2)*.011;
+    const squint=mode==='wave'?.012:mode==='run'?.006:0;
     const arms=[armPose(-1,t),armPose(1,t)],legs=[legPose(-1,t),legPose(1,t)];
     for(let iy=0;iy<rows;iy++){
       const y=(iy+.5)/rows*2-1;
       for(let ix=0;ix<cols;ix++){
-        const x=(ix+.5)/cols*2-1,head=y>-.89&&y<-.005&&Math.abs(x)<headWidth(y);
+        const x=(ix+.5)/cols*2-1,fx=x-faceWobbleX,fy=y-faceWobbleY,head=fy>-.89&&fy<-.005&&Math.abs(fx)<headWidth(fy);
         const neck=y>-.12&&y<.18&&Math.abs(x)<.14;
         const torso=y>.08&&y<.59&&Math.abs(x)<(.255-.105*clamp((y-.1)/.52));
         const shoulders=y>.065&&y<.3&&Math.abs(x)<(.31-Math.max(0,y-.065)*.25);
@@ -89,20 +103,22 @@ main{position:relative;min-height:0;display:grid;grid-template-columns:minmax(20
         if(!head&&!neck&&!torso&&!shoulders&&!armPart&&!legPart)continue;
         let lum=.095+gauss(x,y,-.19,-.34,.45,.68)*.25+gauss(x,y,0,-.2,.43,.72)*.11;
         if(head){
-          lum+=gauss(x,y,-.17,-.64,.3,.13)*.17+gauss(x,y,-.24,-.3,.13,.14)*.11+gauss(x,y,.23,-.3,.13,.14)*.075;
-          for(const s of [-1,1]){const ex=s*.145,ey=-.43;lum-=gauss(x,y,ex,ey,.1,.055)*.18;const open=.012+.021*(1-blink);lum+=gauss(x,y,ex,ey,.061,open)*.42*(1-blink*.9);lum-=gauss(x,y,ex,ey,.017,.023)*.29*(1-blink);lum+=gauss(x,y,ex-.008,ey-.006,.007,.007)*.58*(1-blink);lum-=gauss(x,y,ex-s*.012,ey-.075,.095,.02)*.18}
-          lum+=gauss(x,y,-.014,-.27,.035,.13)*.16+gauss(x,y,-.024,-.15,.06,.035)*.17;lum-=gauss(x,y,0,-.087,.12,.016)*.2;lum+=gauss(x,y,0,-.103,.095,.014)*.1+gauss(x,y,0,-.065,.08,.01)*.07;
-          if(y<-.62){lum*=.62;const strand=hash(Math.floor(ix*.31),Math.floor(iy*.27));if(strand>.9&&y<-.5)lum+=.27}
-          lum*=.62+.38*clamp((headWidth(y)-Math.abs(x))/.05);
+          lum+=gauss(fx,fy,-.17,-.64,.3,.13)*.17+gauss(fx,fy,-.24,-.3,.13,.14)*.11+gauss(fx,fy,.23,-.3,.13,.14)*.075;
+          for(const s of [-1,1]){const ex=s*.145,ey=-.43+gazeY*.28,px=ex+gazeX*.72,py=ey+gazeY;lum-=gauss(fx,fy,ex,ey,.1,.055)*.18;const open=Math.max(.004,.012+.021*(1-blink)-squint);lum+=gauss(fx,fy,ex,ey,.061,open)*.44*(1-blink*.94);lum-=gauss(fx,fy,px,py,.018,.024)*.31*(1-blink);lum+=gauss(fx,fy,px-.008,py-.007,.007,.007)*.62*(1-blink);lum-=gauss(fx,fy,ex-s*.012,ey-.075-browLift*(s===1?1:.45),.095,.018)*.21}
+          lum+=gauss(fx,fy,-.014,-.27,.035,.13)*.16+gauss(fx,fy,-.024,-.15,.06,.035)*.17;
+          const mouthY=-.087+Math.sin(t*3.6)*.004-mouthOpen*.07;lum-=gauss(fx,fy,0,mouthY,.12,.009+mouthOpen)*(.24+mouthOpen*3.5);lum+=gauss(fx,fy,0,mouthY-.017,.095,.009)*.11+gauss(fx,fy,0,mouthY+.019,.084,.008)*.1;
+          const smile=mode==='wave'?.022:mode==='idle'?.008+Math.sin(t*2.8)*.009:mode==='thinking'?-.006:0;lum+=gauss(fx,fy,-.102,mouthY+smile,.024,.02)*.08+gauss(fx,fy,.102,mouthY+smile,.024,.02)*.08;
+          if(fy<-.62){lum*=.62;const strand=hash(Math.floor(ix*.31),Math.floor(iy*.27));if(strand>.9&&fy<-.5)lum+=.27}
+          lum*=.62+.38*clamp((headWidth(fy)-Math.abs(fx))/.05);
         }else if(neck){lum+=gauss(x,y,-.055,.02,.08,.17)*.14-gauss(x,y,.09,.04,.05,.16)*.07}
         else if(torso||shoulders){lum+=gauss(x,y,-.19,.28,.27,.34)*.13;const seam=Math.abs(Math.abs(x)-(.11+Math.max(0,y-.16)*.045));if(seam<.01)lum+=.1;const hem=Math.abs(y-.575);if(hem<.012&&Math.abs(x)<.16)lum+=.15}
         if(armPart){lum=.2+gauss(x,y,-.17,-.1,.4,.75)*.27;if(mode==='typing')lum+=.12;if(armPart===2)lum+=.13}
         if(legPart){lum=.16+gauss(x,y,-.2,.45,.4,.55)*.27;if(Math.abs(y-.74)<.012)lum+=.09}
         const texture=(hash(ix,iy)-.5)*.07;
-        const livingWave=Math.sin(t*2.6+x*8+y*6)*.035+Math.sin(t*1.19-y*13+x*4)*.022+Math.sin(t*1.8+y*17)*.012;
-        lum+=texture+livingWave;if(y>.06)lum+=Math.sin(t*2.1+y*4)*.018;
+        const livingWave=Math.sin(t*4.2+x*8+y*6)*.055+Math.sin(t*2.1-y*13+x*4)*.032+Math.sin(t*3.4+y*17)*.022;
+        lum+=texture+livingWave;if(y>.06)lum+=Math.sin(t*3.3+y*4)*.04;
         if(mode==='typing'&&y>.18&&y<.5)lum+=Math.max(0,Math.sin(t*17+ix*.33))*.05;
-        let special='';if(head&&headWidth(y)-Math.abs(x)<.028){lum+=.13;special=x<0?'(':')'}
+        let special='';if(head&&headWidth(fy)-Math.abs(fx)<.028){lum+=.13;special=fx<0?'(':')'}
         for(const ripple of ripples){const age=(now-ripple.t)/ripple.life;if(age<1){const radius=.025+age*.34;if(Math.abs(Math.hypot(x-ripple.x,y-ripple.y)-radius)<.012){lum=Math.max(lum,.9*(1-age*.4));special=age>.64?'+':'*'}}}
         if(mode==='thinking'&&now<modeEnd){const orbit=t*1.8;for(let i=0;i<3;i++){const ox=.39+Math.cos(orbit+i*2.1)*.1,oy=-.73+Math.sin(orbit+i*2.1)*.055;if(Math.hypot(x-ox,y-oy)<.021){lum=Math.max(lum,.88);special=i===1?'°':'·'}}}
         if(mode==='wave'&&armPart===2){lum=Math.max(lum,.8);special='!'}
@@ -113,9 +129,9 @@ main{position:relative;min-height:0;display:grid;grid-template-columns:minmax(20
       }
     }
     ctx.globalAlpha=1;ripples=ripples.filter(r=>now-r.t<r.life);
-    const idleX=!reduced?Math.sin(t*.63)*5:0,idleY=!reduced?Math.sin(t*.9)*3:0,activeX=mode==='typing'?Math.sin(t*9)*2.5:0;
+    const idleX=!reduced?Math.sin(t*1.8)*10+Math.sin(t*3.1)*3:0,idleY=!reduced?Math.sin(t*2.2)*7+Math.cos(t*3.5)*2:0,activeX=mode==='typing'?Math.sin(t*12)*4:0;
     const runRange=Math.max(0,(innerWidth-group.getBoundingClientRect().width)*.48),runElapsed=now-modeStart,runFade=1-smooth((runElapsed-7600)/1400),runX=mode==='run'?Math.sin(runElapsed*.00105)*runRange*runFade:0;
-    const driftX=runX+Math.sin(t*.31)*13+idleX+activeX+drag.dx,driftY=Math.sin(t*1.7)*2.3+Math.cos(t*.42)*6+idleY+(mode==='run'?Math.abs(Math.sin(t*10))*3:0)+drag.dy,tilt=!reduced?Math.sin(t*.83)*.8+(mode==='run'?Math.sin(t*10)*2.5:0):0;
+    const driftX=runX+Math.sin(t*1.05)*15+Math.sin(t*2.4)*4+idleX+activeX+drag.dx,driftY=Math.sin(t*2.3)*3+Math.cos(t*1.7)*5+idleY+(mode==='run'?Math.abs(Math.sin(t*10))*5:0)+drag.dy,tilt=!reduced?Math.sin(t*1.45)*1.7+(mode==='run'?Math.sin(t*10)*3.8:0):0;
     group.style.transform=`translate(calc(-50% + ${driftX}px),calc(-50% + ${driftY}px)) rotate(${tilt}deg)`;
   }
   function a0(l){return l.hipX}function a1(l){return l.hipY}function a2(l){return l.kneeX}function a3(l){return l.kneeY}
@@ -123,6 +139,7 @@ main{position:relative;min-height:0;display:grid;grid-template-columns:minmax(20
   buttons.forEach(b=>b.addEventListener('click',()=>b.dataset.action==='click'?randomClick():setMode(b.dataset.action,b.dataset.action==='wave'?1900:b.dataset.action==='run'?9000:3000)));
   swatches.forEach(b=>b.addEventListener('click',()=>{palette=b.dataset.palette;swatches.forEach(s=>s.classList.toggle('active',s===b))}));
   canvas.addEventListener('pointerup',()=>{if(!drag.moved)randomClick()});
+  window.addEventListener('pointermove',e=>{const r=canvas.getBoundingClientRect();pointerLookX=clamp((e.clientX-r.left)/r.width-.5,-.4,.4)*.16;pointerLookY=clamp((e.clientY-r.top)/r.height-.43,-.4,.4)*.1;pointerLookUntil=performance.now()+900},{passive:true});
   window.addEventListener('keydown',e=>{if(!e.repeat&&!['INPUT','BUTTON'].includes(e.target.tagName))setMode('typing',1750)});
   window.addEventListener('pointerdown',e=>{if(e.target===canvas)return;if(!e.target.closest('.panel'))setMode('click',750)},{passive:true});
   group.addEventListener('pointerdown',e=>{drag.active=true;drag.moved=false;drag.x=e.clientX;drag.y=e.clientY;drag.originX=drag.dx;drag.originY=drag.dy;group.classList.add('dragging');group.setPointerCapture?.(e.pointerId)});

@@ -8,7 +8,7 @@ Open `index.html` in a modern browser. A procedural face-and-shoulders field is 
 
 This demo does not watch activity outside its browser tab. Mood, chat, and real desktop integration remain future work.
 
-The separate `bob-floating.html` study keeps the original `index.html` untouched. It adds a full figure with legs, continuously shifting glyphs, floating thought text, four ink palettes, draggable movement, running, tiny idle hands, and typing/click/thinking/waving animations.
+The separate `bob-floating.html` study keeps the original `index.html` untouched. It adds a full figure with legs, continuously shifting glyphs, floating thought text, four ink palettes, draggable movement, running, tiny idle hands, and typing/click/thinking/waving animations. Its face now has quick eye saccades, cursor gaze, frequent blinks, a gently shifting head, and action-specific brows and mouth shapes.
 
 ## Research notes
 
