@@ -8,7 +8,7 @@ Open `index.html` in a modern browser. A procedural face-and-shoulders field is 
 
 This demo does not watch activity outside its browser tab. Mood, chat, and real desktop integration remain future work.
 
-The separate `bob-floating.html` study keeps the original `index.html` untouched and adds a full floating figure, tiny animated T-rex arms, drag movement, and randomized click reactions.
+The separate `bob-floating.html` study keeps the original `index.html` untouched. It adds a full figure with legs, continuously shifting glyphs, floating thought text, four ink palettes, draggable movement, running, tiny idle hands, and typing/click/thinking/waving animations.
 
 ## Research notes
 
@@ -16,6 +16,8 @@ The separate `bob-floating.html` study keeps the original `index.html` untouched
 - [iart-ai/web-animation-skills — ASCII Animation](https://github.com/iart-ai/web-animation-skills/tree/main/skills/ascii-animation) covers generative ASCII fields and converting images, video, and 3D scenes to ASCII for canvas and Three.js.
 - [collidingScopes/ASCII](https://github.com/collidingScopes/ASCII) is a JavaScript + HTML Canvas reference for image sampling and glyph rendering; its repository lists an MIT license.
 - [ayangabryl/asciify-engine](https://github.com/ayangabryl/asciify-engine) offers a more advanced photo-aware GPU/WebGL2 engine and reusable agent skill under MIT.
+- [MarkPushRec/ascii-studio](https://github.com/MarkPushRec/ascii-studio) demonstrates crisp glyph sprites with animated position, trails, and cursor-driven motion rather than stretching each character.
+- [sister-software/asciify](https://github.com/sister-software/asciify) shows a compact glyph-atlas renderer with a Canvas fallback; [Theovia/ascii-lab](https://github.com/Theovia/ascii-lab) explores edge-preserving, cursor-reactive ASCII in a single-file shader demo.
 - [Google's Gemini image-generation guide](https://ai.google.dev/gemini-api/docs/image-generation) was reviewed in the initial research. This revision uses no generated portrait or Google API.
 
 ## Deployment
