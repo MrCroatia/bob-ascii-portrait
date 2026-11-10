@@ -8,6 +8,8 @@ Open `index.html` in a modern browser. A procedural face-and-shoulders field is 
 
 This demo does not watch activity outside its browser tab. Mood, chat, and real desktop integration remain future work.
 
+The separate `bob-floating.html` study keeps the original `index.html` untouched and adds a full floating figure, tiny animated T-rex arms, drag movement, and randomized click reactions.
+
 ## Research notes
 
 - [Capri Desktop](https://github.com/lachydotmcg/capri-desktop) informed the quiet, character-first companion framing. No Capri code or assets are used.
